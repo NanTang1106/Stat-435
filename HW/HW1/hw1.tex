@@ -1,0 +1,61 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{fancyhdr}
+\usepackage[margin=1in]{geometry}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{setspace} 
+\onehalfspacing
+ 
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{STAT 435 HW 1}
+\rhead{Nan Tang (1662478)}
+\rfoot{Page \thepage}
+ 
+
+\title{STAT 435 Homework 1}
+\author{Nan Tang 1662478}
+\date{\today}
+
+\begin{document}
+\section*{part2 - a}
+
+\begin{align*}
+D &= E(\frac{1}{n} \| f - \hat{f} \|^2 ) \\
+&= E(\frac{1}{n} \| f - E(\hat{f}) - \hat{f} + E(\hat{f})\|^2 ) \\
+&= E(\frac{1}{n} \| f - E(\hat{f}) - \hat{f} + E(\hat{f})\|^2 ) \\
+&= \frac{1}{n} [E(\| f - E(\hat{f}) \|^2) + E(\| \hat{f} - E(\hat{f}) \|^2)  + 2E(E(\| f - E(\hat{f}) \|) E(\| \hat{f} - E(\hat{f} ) \|)]
+\end{align*}
+
+\noindent Note that $E(E(\|\hat{f} - E(\hat{f}) \|)) = 0$, two terms are independent to each other, therefore the cross term $2E(E(\| f - E(\hat{f}) \|) E(\| \hat{f} - E(\hat{f} ) \|) = 0$.
+\begin{align*}
+D &= \frac{1}{n} [E(\| f - E(\hat{f}) \|^2) + E(\| \hat{f} - E(\hat{f}) \|^2) ]
+\end{align*}
+
+\noindent Separately write two terms. \\
+
+\noindent Since $\hat{f} = W y$ and $y = f + \epsilon$, where $y, f, \epsilon$ are vectors, $E(\hat{f}) = E(W y) = W E(f + \epsilon ) = W f$ 
+
+\begin{align*}
+E(\| f - E(\hat{f}) \|^2) &= E(\| f - Wf \|^2) \\
+&= E(\| (W-I) f \|^2)
+\end{align*}
+\noindent Since $W$ depends only on bandwidth, and $f$ is parameter, this term can be written as $\| (W-I) f \|^2$\\
+
+
+\noindent $E(\| \hat{f} - E(\hat{f}) \|^2)$ is the variance of $\| \hat{f} \|$, where $\hat{f} = W y$. 
+\begin{align*}
+E(\| \hat{f} - E(\hat{f}) \|^2) &= Var(\| W \| y ) \\
+&= \| W^2 \| Var(y) \\
+&= trace(W^T W) \sigma^2
+\end{align*}
+
+\noindent Combine these two term, we proved:
+\begin{align*}
+D &= \frac{1}{n} (\| (W-I) f \|^2 + trace(W^T W) \sigma^2 )
+\end{align*}
+
+\end{document}

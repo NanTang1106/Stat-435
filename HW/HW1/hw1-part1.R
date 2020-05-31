@@ -1,0 +1,182 @@
+library(scales)
+
+## load data
+source('home1-part1-data.R')
+
+## a
+ksmooth.train <- function(x.train, y.train, kernel=c('box', 'normal'), 
+                          bandwidth=0.5, CV=FALSE) {
+  train.length <- length(x.train)
+  
+  yhat <- numeric(train.length)
+  
+  if(kernel=='box') {
+    if(CV) {
+      for (i in 1:train.length) {
+        x.i <- x.train[i]
+        x.train.cv <- x.train[-i]
+        y.train.cv <- y.train[-i]
+        yhat[i] <- mean(y.train.cv[which(abs(x.train.cv - x.i) < 0.5 * bandwidth)])
+      }
+    } else {
+      for (i in 1:train.length) {
+        x.i <- x.train[i]
+        yhat[i] <- mean(y.train[which(abs(x.train - x.i) < 0.5 * bandwidth)])
+      }
+    }
+  } else{
+    # get sigma
+    gk.sigma <- bandwidth * 0.25 / qnorm(0.75, 0, sd=1)
+    
+    if (CV) {
+      
+      for (i in 1:train.length) {
+        gk.out <- dnorm(x.train[-i], x.train[i], gk.sigma)
+        yhat[i] <- sum(y.train[-i] * gk.out) / sum(gk.out)
+      }
+    } else {
+      
+      for (i in 1:train.length) {
+        gk.out <- dnorm(x.train, x.train[i], gk.sigma)
+        yhat[i] <- sum(y.train * gk.out) / sum(gk.out)
+      }
+    }
+  }
+  
+  # output 
+  output.list <- list(x.train, yhat)
+  names(output.list) <- c('x.train', 'yhat.train')
+  return(output.list)
+}
+
+
+## b
+ksmooth.predict <- function(ksmooth.train.out, x.query) {
+  y.pred <- numeric(length(x.query))
+  
+  # linear interpolation inside range
+  # values outside range are stored as NA
+  y.pred <- approx(ksmooth.train.out$x.train, ksmooth.train.out$yhat.train, x.query, 
+                   method='linear', ties=mean)[[2]]
+  
+  x.train.min <- min(ksmooth.train.out$x.train)
+  x.train.max <- max(ksmooth.train.out$x.train)
+  yhat.extrap.down <- mean(ksmooth.train.out$yhat.train[which(ksmooth.train.out$x.train==x.train.min)])
+  yhat.extrap.up <- mean(ksmooth.train.out$yhat.train[which(ksmooth.train.out$x.train==x.train.max)])
+  
+  extrap.down.index <- which(x.query < x.train.min)
+  extrap.up.index <- which(x.query > x.train.max)
+  
+  # constant extrapolation for x values smaller than min of x.train
+  if (length(extrap.down.index) > 0) {
+    y.pred[extrap.down.index] <- yhat.extrap.down
+  }
+  
+  # constant extrapolation for x values greater than max of x.train
+  if (length(extrap.up.index) > 0) {
+    y.pred[extrap.up.index] <- yhat.extrap.up
+  }
+  
+  # output 
+  output.list <- list(x.query, y.pred)
+  names(output.list) <- c('x.query', 'y.pred')
+  return(output.list)
+}
+
+
+## c
+train.age <- Wage.train$age
+train.wage <- Wage.train$wage
+
+ksmooth.train.out <- ksmooth.train(train.age, train.wage, kernel='normal', bandwidth=3)
+
+ks.out.df <- data.frame(ksmooth.train.out$x.train, ksmooth.train.out$yhat.train)
+ks.out.df <- ks.out.df[order(ks.out.df[,1]),]
+
+plot(train.age, train.wage, col=alpha('gray50', alpha=0.5), 
+     pch=16, cex=0.8, xlab='Age in train', ylab='Wage in train')
+lines(ks.out.df, lwd=2)
+
+RSS.train <- sum((train.wage - ksmooth.train.out$yhat.train)^2)
+
+
+## d
+test.age <- Wage.test$age
+test.wage <- Wage.test$wage
+
+ksmooth.pred.out <- ksmooth.predict(ksmooth.train.out, test.age)
+
+ks.pred.df <- data.frame(ksmooth.pred.out$x.query, ksmooth.pred.out$y.pred)
+ks.pred.df <- ks.pred.df[order(ks.pred.df[,1]),]
+
+plot(test.age, test.wage, col=alpha('gray50', alpha=0.5), 
+     pch=16, cex=0.8, xlab='Age in test', ylab='Wage in test')
+lines(ks.pred.df, lwd=2)
+
+RSS.test <- sum((test.wage - ksmooth.pred.out$y.pred)^2)
+
+
+## e
+ESE.resub <- numeric(length(1:10))
+
+for (i in 1:10) {
+  ks.train.temp <- ksmooth.train(train.age, train.wage, kernel='normal', bandwidth=i)
+  ese.train <- sum((train.wage - ks.train.temp$yhat.train)^2) / length(train.wage)
+  ESE.resub[i] <- ese.train
+}
+
+plot(1:10, ESE.resub, pch=16, col='gray25', 
+     xlab='Bandwidth', ylab='Resubstitusion ESE')
+
+
+## f
+ESE.loocv <- numeric(length(1:10))
+
+for (i in 1:10) {
+  ks.train.cv.temp <- ksmooth.train(train.age, train.wage, kernel='normal', bandwidth=i, CV=TRUE)
+  ese.train.cv <- sum((train.wage - ks.train.cv.temp$yhat.train)^2) /length(train.wage)
+  ESE.loocv[i] <- ese.train.cv
+}
+
+plot(1:10, ESE.loocv, pch=16, col='gray25', 
+     xlab='Bandwidth', ylab='LOOCV ESE')
+
+
+## g
+ESE.est <- numeric(10)
+for (i in 1:10) {
+  ks.train.temp <- ksmooth.train(train.age, train.wage, kernel='normal', bandwidth=i)
+  ks.pred.temp <- ksmooth.predict(ks.train.temp, test.age)
+  ese.test <- sum((test.wage - ks.pred.temp$y.pred)^2) / length(test.wage)
+  ESE.est[i] <- ese.test
+}
+plot(1:10, ESE.est, pch=16, col='gray25', 
+     xlab='Bandwidth', ylab='Test Set ESE')
+
+
+## h
+k <- 5
+ESE.est <- numeric(10)
+
+for (bw in 1:10) {
+  ESE.5fold <- numeric(k)
+  for (i in 1:k) {
+    age.test.fold <- Wage.train$age[which(fold==i)]
+    wage.test.fold <- Wage.train$wage[which(fold==i)]
+    age.train.fold <- Wage.train$age[-which(fold==i)]
+    wage.train.fold <- Wage.train$wage[-which(fold==i)]
+    
+    ks.train.temp <- ksmooth.train(age.train.fold, wage.train.fold, kernel='normal', bw)
+    ks.pred.temp <- ksmooth.predict(ks.train.temp, age.test.fold)
+    
+    ESE.temp <- sum((wage.test.fold - ks.pred.temp$y.pred)^2) / length(wage.test.fold)
+    
+    ESE.5fold[i] <- ESE.temp
+  }
+  
+  ESE.est[bw] <- sum(ESE.5fold) / k
+}
+
+plot(ESE.est)
+
+
