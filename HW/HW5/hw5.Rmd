@@ -1,0 +1,64 @@
+---
+title: "hw5"
+author: "Nan Tang"
+date: "5/31/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library("RColorBrewer")
+library('tree')
+library('randomForest')
+```
+
+## Problem 1
+### (a)
+$$
+\begin{aligned}
+  p(X) &= \sum_y p(x|Y) p(Y) \\
+  &= p(x|Y=1) p(Y=1) + p(x|Y=2) p(Y=2) \\
+  &= \frac{1}{4} \cdot I(-4 < x < -2) + \frac{1}{4} \cdot I(2 < x < 4)
+\end{aligned}
+$$
+Marginal distribution of X follows uniform distribution on seperate intervals [-4, -2] and [2, 4].
+
+$$
+\begin{aligned}
+  p(Y=1|X \in [-4, -2]) &= [p(X|Y=1) \cdot p(Y=1)] / [p(X)] \\
+  &= (\frac{1}{2} \cdot 1 \cdot \frac{1}{2}) / (\frac{1}{4}) \\
+  &= 1 \\
+  p(Y=2|X \in [-4, -2]) &= 0 \text{, since } p(x \in [-4, -2] | Y=2) = 0
+\end{aligned}
+$$
+similiarly, $p(Y=2|X \in [2, 4]) = 1$, $p(Y=1|X \in [2, 4]) = 0$
+
+
+### (b)
+Since the conditional probability distribution of $Y$ base on $X$ can be represented as 
+$$
+\begin{aligned}
+  p(Y=1|X \in [-4, -2]) &= 1 \\
+  p(Y=2|X \in [-4, -2]) &= 0 \\
+  p(Y=1|X \in [2, 4]) &= 0 \\
+  p(Y=2|X \in [2, 4]) &= 1 \\
+\end{aligned}
+$$
+$$
+\begin{aligned}
+  p(Y=1|X \in [-4, -2]) &> p(Y=2|X \in [-4, -2]) \\
+  p(Y=2|X \in [2, 4]) &> p(Y=1|X \in [2, 4])
+\end{aligned}
+$$
+Therefore, estimator of bayes rule for y is $f_B(x \in [-4, -2]) = 1$, $f_B(x \in [2, 4]) = 2$. \
+In this case, risk is zero, since $p(Y=2|X \in[-4, -2]) = p(Y=1|X\in[2, 4]) = 0$, their sum is zero as well.
+
+
+### (c)
+
+
+
+
+
+
