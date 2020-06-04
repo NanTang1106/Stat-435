@@ -11,6 +11,8 @@ knitr::opts_chunk$set(echo = TRUE)
 library("RColorBrewer")
 library('tree')
 library('randomForest')
+library('ISLR')
+data(OJ)
 ```
 
 ## Problem 1
@@ -22,7 +24,8 @@ $$
   &= \frac{1}{4} \cdot I(-4 < x < -2) + \frac{1}{4} \cdot I(2 < x < 4)
 \end{aligned}
 $$
-Marginal distribution of X follows uniform distribution on seperate intervals [-4, -2] and [2, 4].
+
+Marginal distribution of X follows uniform distribution on seperate intervals [-4, -2] and [2, 4], pdf of X is $\frac{1}{4}$ if x falls in intervals. 
 
 $$
 \begin{aligned}
@@ -37,6 +40,7 @@ similiarly, $p(Y=2|X \in [2, 4]) = 1$, $p(Y=1|X \in [2, 4]) = 0$
 
 ### (b)
 Since the conditional probability distribution of $Y$ base on $X$ can be represented as 
+
 $$
 \begin{aligned}
   p(Y=1|X \in [-4, -2]) &= 1 \\
@@ -45,20 +49,175 @@ $$
   p(Y=2|X \in [2, 4]) &= 1 \\
 \end{aligned}
 $$
+\
 $$
 \begin{aligned}
   p(Y=1|X \in [-4, -2]) &> p(Y=2|X \in [-4, -2]) \\
   p(Y=2|X \in [2, 4]) &> p(Y=1|X \in [2, 4])
 \end{aligned}
-$$
+$$ 
+
 Therefore, estimator of bayes rule for y is $f_B(x \in [-4, -2]) = 1$, $f_B(x \in [2, 4]) = 2$. \
 In this case, risk is zero, since $p(Y=2|X \in[-4, -2]) = p(Y=1|X\in[2, 4]) = 0$, their sum is zero as well.
 
 
 ### (c)
+For any query point $(x_0, y_0)$, where $x_0 \in [-4, -2] \text{ or } [2, 4]$, $y_0 = 1 \text{ or } 2$. Misclassification only occure when all samples $(x_i)$ are draw from one interval, while query point $x_0$ in another interval. \
+
+For example, in the case when all sample points $(x_i, y_i)$ satisfies $x_i \in [-4, -2]$, then classification rule $S$ will classify any $y_0$ as 1, even if $x_0 \in [2, 4]$. \
+
+Conditional probability of Y given X is pure on both intervals of X, the training risk for KNN is zero. Risk only exists on independent test data: 
+
+$$
+\begin{aligned}
+p(y_0 \neq \hat{f_1(x_0; S)}) &= p(\text{all sample }x_i \in [-4, -2] \cap x_0 \in [2, 4]) + p(\text{all sample }x_i \in [2, 4] \cap x_0 \in [-4, -2]) \\
+&= p(\text{all sample }x_i \in [-4, -2])p(x_0 \in [2, 4]) + p(\text{all sample }x_i \in [2, 4]) p( x_0 \in [-4, -2]) \\
+&= (\frac{1}{2})^n \frac{1}{2} + (\frac{1}{2})^n \frac{1}{2} \text{ , since x uniformly distributed on two intervals} \\
+&= (\frac{1}{2})^n \text{, where n is sample size}
+\end{aligned} 
+$$
+
+### (d)
+Risk for KNN classification with K=3 occurs when there are less than two (one or zero) training data $x_i$ in the same interval as query point $x_0$. \
+
+For example, when only query point $x_0 \in [2, 4]$ and one sample point $x_j \in [2, 4]$, while other sample points $x_{i \neq j} \in [-4, -2]$. Classification rule will incorrectly predict $\hat{fx_0}$ as 1, since two of the three nearest training points have value $y_i = 1$. 
+
+$$
+\begin{aligned}
+p(y_0 \neq \hat{f_3(x_0; S)}) &= p(\text{less than two sample } x_i \in [-4, -2] \cap x_0 \in [-4, -2]) + p(\text{less than two sample}  x_i \in [2, 4] \cap x_0 \in [2, 4]) \\
+&= p(\text{all sample }x_i \in [-4, -2] \cap x_0 \in [2, 4]) + p(\text{all sample }x_i \in [2, 4] \cap x_0 \in [-4, -2]) \\
+&+ p(\text{only one }x_i \in [2, 4] \cap x_0 \in [2, 4]) + p(\text{only one }x_i \in [-4, -2] \cap x_0 \in [-4, -2]) \\
+&= p(\text{all sample }x_i \in [-4, -2])p(x_0 \in [2, 4]) + p(\text{all sample }x_i \in [2, 4]) p( x_0 \in [-4, -2]) \\
+&+ p(\text{only one }x_i \in [2, 4])p( x_0 \in [2, 4]) + p(\text{only one }x_i \in [-4, -2])p(x_0 \in [-4, -2]) \\
+&= (\frac{1}{2})^n \frac{1}{2} + (\frac{1}{2})^n \frac{1}{2}+ {n \choose 1}(\frac{1}{2})^n \frac{1}{2} +  {n \choose 1}(\frac{1}{2})^n \frac{1}{2}\\
+&= (\frac{1}{2})^n + {n \choose 1} (\frac{1}{2})^n \\
+&= (n + 1)(\frac{1}{2})^n
+\end{aligned} 
+$$
+
+### (e)
+In this case, 1-nearest neighbor classifier has smaller risk than 3-nearest neighbor classifier. 
 
 
+## 8.4.3
+```{r 8.4.3, warning=FALSE}
+p_m1 = seq(from=0, to=1, by=0.01)
+
+gini_val = 2 * p_m1 * (1-p_m1)
+
+entropy_val = - (p_m1 * log(p_m1) + (1-p_m1) * log(1-p_m1))
+
+## 1 - max(p, 1-p)
+classerror_val = 1 - pmax(p_m1, 1-p_m1)
+
+colors = brewer.pal(n = 3, name = "Set1")
+
+plot(NA, NA, xlim=c(0, 1), ylim=c(0, 1), xlab='p_m1', ylab='values')
+lines(p_m1, gini_val, col=colors[1], lwd=2)
+lines(p_m1, entropy_val, col=colors[2], lwd=2)
+lines(p_m1, classerror_val, col=colors[3], lwd=2)
+
+legend('topleft', legend=c('gini', 'entropy', 'classification error'), col=colors, lwd=2)
+
+```
+
+The plot implies gini index and entropy are more sensitive to $p_{mi}$'s with small value.
 
 
+## 8.4.9
+### (a)
+``` {r 9-a}
+set.seed(1)
 
+train_index <- sample(1:nrow(OJ), 800)
+train_dt <- OJ[train_index,]
+test_dt <- OJ[-train_index,]
+```
 
+### (b)
+``` {r 9-b}
+train_tree <- tree(formula=Purchase~., data=train_dt)
+summary(train_tree)
+```
+The tree has 9 terminal nodes, the training error rate is 0.1588. 
+
+### (c)
+```{r 9-c}
+train_tree
+```
+
+Pick the terminal node (7) LoyalCH > 0.764572 261   91.20 CH ( 0.95785 0.04215 ) * as example. (7) is a branch of (3), while (3) is a branch of root. If 'LoyalCh' > 0.5036 and 'LoyalCH' > 0.7646, then we can classify 'Purchase' as CH. \
+This leaf (15) contains 261 training observations; 95.8% are CH and 4.2% are MM; deviance is 91.2. 
+
+### (d)
+```{r 9-d}
+plot(train_tree)
+text(train_tree, col='red')
+```
+
+for example: this tree model will predict 'Purchase' of an object with 'LoyalCH' < 0.0356 as MM; 'Purchase' of an object with 'LoyalCH' < 0.2809 and 'PriceDiff' > 0.05 as CH.
+
+### (e)
+```{r 9-e}
+test_pred <- predict(train_tree, test_dt, type='class')
+
+table(test_dt[,'Purchase'], test_pred)
+
+test_err <- (table(test_dt[,'Purchase'], test_pred)[1,2] + table(test_dt[,'Purchase'], test_pred)[2,1] ) /length(test_pred)
+print(test_err)
+```
+
+Test error rate is 17.04%
+
+### (f)
+```{r 9-f}
+set.seed(2)
+
+train_tree_cv <- cv.tree(train_tree, FUN=prune.misclass, K=5)
+```
+
+### (g)
+```{r 9-g}
+plot(train_tree_cv)
+```
+
+### (h)
+```{r 9-h}
+opt_size <- train_tree_cv$size[train_tree_cv$dev == min(train_tree_cv$dev)]
+
+print(opt_size)
+```
+
+Tree size 7 has lowest mis-classification rate in training cross-validation. 
+
+### (i)
+```{r 9-i}
+opt_tree <- prune.misclass(train_tree, best=7)
+
+plot(opt_tree)
+text(opt_tree)
+```
+
+### (j)
+```{r 9-j}
+opt_train_pred <- predict(opt_tree, train_dt, type='class')
+
+table(train_dt[,'Purchase'], opt_train_pred )
+
+opt_train_err <- (table(opt_train_pred, train_dt[,'Purchase'])[1, 2] + table(opt_train_pred, train_dt[,'Purchase'])[2, 1]) / nrow(train_dt)
+print(opt_train_err)
+```
+
+Training error rate of tree with 7 terminal nodes is 16.25%. Comparing to unpruned tree model, training error rate of pruned model is slightly higher. 
+
+### (k)
+```{r 9-k}
+opt_test_pred <- predict(opt_tree, test_dt, type='class')
+
+table(test_dt[, 'Purchase'], opt_test_pred)
+
+opt_test_err <- (table(test_dt[, 'Purchase'], opt_test_pred)[1, 2] + table(test_dt[, 'Purchase'], opt_test_pred)[2, 1]) / nrow(test_dt)
+print(opt_test_err)
+```
+
+Test error rate of tree model with 7 terminal nodes is 16.3%. Approximately 1% lower than testing error rate of unpruned model, implying the pruned model performs better on testing data. 
