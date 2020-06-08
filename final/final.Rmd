@@ -1,0 +1,294 @@
+---
+title: "final"
+author: "Nan Tang"
+date: "6/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+setwd("/Users/nantang/Desktop/STAT435/final")
+library(tree)
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+```
+
+## Problem 1
+### (a)
+If no split is allowed, we will classify all query points as $y = 0$, since $p(y = 0) = \frac{7}{8}$ greater than $p(y = 1) = \frac{1}{8}$. \
+
+In this case risk is probability of misclassifying $y = 1$ as $y = 0$
+$$ 
+\begin{aligned}
+  p(risk) = p(y = 1) = \frac{1}{8}
+\end{aligned}
+$$
+
+### (b)
+$$
+\begin{aligned}
+  p(y = 0 | x \in [1, 3] \times [0, 3]) &= 1 \\
+  p(y = 1 | x \in [1, 3] \times [0, 3]) &= 0 \\
+  p(y = 0 | x \in [0, 1] \times [0, 3]) &= \frac{p(x \in [0, 1] \times [0, 3] | y=0) \cdot p(y=0)}{p(x \in [0, 1] \times [0, 3])} = \frac{7}{10} \\
+  p(y = 1 | x \in [0, 1] \times [0, 3]) &= 1 - p(y = 0 | x \in [0, 1] \times [0, 3]) = \frac{3}{10}
+\end{aligned}
+$$
+
+By minimum risk prediction rule, we will classify both left and right leaves as $y = 0$.
+
+$$
+\begin{aligned}
+ p(risk) &= p(x \in [1, 3] \times [0, 3] \text{ and } y = 1) \\
+ &= p(x \in [1, 3] \times [0, 3] | y = 1) \cdot p(y=1) \\
+ &= 1 \times \frac{1}{8} \\
+ &= \frac{1}{8}
+\end{aligned}
+$$
+
+This vertical split failed to reduce misclassification risk.
+
+### (c)
+If only one split is allowed, there is no way to reduce misclassification risk.
+
+### (d)
+By rule of probabilistic classification, probability of classify query point $(x_0, y_0)$ as $\hat{y_0}=1$ equals marginal probability of $y=1$ which is $\frac{1}{8}$; probability of classify query point $(x_0, y_0)$ as $\hat{y_0}=0$ equals marginal probability of $y=0$ which is $\frac{7}{8}$. 
+
+$$
+\begin{aligned}
+  p(risk) &= p(\hat{y_0}=1 \text{ and } y_0 = 0) + p(\hat{y_0}=0 \text{ and } y_0 = 1) \\
+  &= p(\hat{y_0}=1) \cdot p( y_0 = 0) + p(\hat{y_0}=0) \cdot p( y_0 = 1) \\
+  &= \frac{7}{32}
+\end{aligned}
+$$
+
+### (e)
+Marginal probability distribution for $x$ can be represent as:
+$$
+\begin{aligned}
+  p(x \in [0, 1] \times [0, 3]) &= p(x \in [0, 1] \times [0, 3] | y=0) \cdot p(y=0) + p(x \in [0, 1] \times [0, 3] | y=1) \cdot p(y=1) \\
+  &= \frac{1}{3} \cdot \frac{7}{8} + 1 \cdot \frac{1}{8} \\
+  &= \frac{5}{12}
+\end{aligned}
+$$
+
+$$
+\begin{aligned}
+  p(y = 0 | x \in [1, 3] \times [0, 3]) &= 1 \\
+  p(y = 1 | x \in [1, 3] \times [0, 3]) &= 0 \\
+  p(y = 0 | x \in [0, 1] \times [0, 3]) &= \frac{p(x \in [0, 1] \times [0, 3] | y=0) \cdot p(y=0)}{p(x \in [0, 1] \times [0, 3])} = \frac{7}{10} \\
+  p(y = 1 | x \in [0, 1] \times [0, 3]) &= 1 - p(y = 0 | x \in [0, 1] \times [0, 3]) = \frac{3}{10}
+\end{aligned}
+$$
+
+By probabilistic classification rule, for $x_0 \in N_r$, probability of classify $\hat{y_0} = 0$ is 1; for $x_0 \in N_l$, probability of classify $\hat{y_0} = 0$ is $\frac{7}{10}$, and probability of classify $\hat{y_0} =1$ is $\frac{3}{10}$. \
+
+In this case, risk only exists in left leaf, where $x \in [0, 1] \times [0, 3]$
+
+$$
+\begin{aligned}
+  p(risk) &= p(\hat{y_0} = 1 \text{ and } y_0 = 0) + p(\hat{y_0} = 0 \text{ and } y_0 = 1) \\
+  &= p(\hat{y_0} = 1, y_0 = 0 | x \in [0, 1] \times [0, 3]) \cdot p(x \in [0, 1] \times [0, 3]) + p(\hat{y_0} = 0, y_0 = 1 | x \in [0, 1] \times [0, 3]) \cdot p(x \in [0, 1] \times [0, 3]) \\
+  &= (\frac{7}{10} \cdot \frac{3}{10} \cdot 2) \cdot \frac{5}{12}\\
+  &= \frac{7}{40}
+\end{aligned}
+$$
+
+Compare to previous one, this split reduced risk from $\frac{7}{32}$ to $\frac{7}{40}$.
+
+### (f)
+A horizontal split can be applied, by deviding X into two parts: $[0, 3] \times [0, 1]$ and $[0, 3] \times [1, 3]$. Decision rule will be similiar to pervious split. \
+
+Risk doesn't exist on leaf $X \in [0, 3] \times [1, 3]$; risk on small leaf $x \in [0, 3] \times [0, 1]$ is $\frac{7}{40}$ as well. \
+
+Split mothods in part (e) and (f) are both optimized in reducing misclassification risk, therefore, (f) has equivlent risk comparing to (e).
+
+
+## Problem 2
+### (a)
+```{r p2-a, warning=FALSE}
+## train test split
+spam_dt <- read.table('spam.data', sep=' ')
+spam_dt$V58 <- as.factor(spam_dt$V58)
+
+split_index <- read.table('spam.traintest', sep=' ')
+
+spam_train <- spam_dt[which(split_index$V1 == 0),]
+spam_test <- spam_dt[which(split_index$V1 == 1),]
+
+train_tree <- tree(formula = V58~., data=spam_train)
+
+plot(train_tree)
+text(train_tree, col='red', cex=0.8)
+
+## predictions
+train_pred <- predict(train_tree, spam_train, type='class')
+train_pred_tb <- table(spam_train$V58, train_pred)
+train_err <- (train_pred_tb[1, 2] + train_pred_tb[2, 1]) / length(train_pred)
+cat('training error rate: ', train_err)
+
+test_pred <- predict(train_tree, spam_test, type='class')
+test_pred_tb <- table(spam_test$V58, test_pred)
+test_err <- (test_pred_tb[1, 2] + test_pred_tb[2, 1]) / length(test_pred)
+cat('test error rate: ', test_err)
+```
+
+### (b)
+```{r p2-b}
+set.seed(123)
+
+train_rpart <- rpart(formula = V58~., data=spam_train, method='class', cp=0.0001)
+
+plotcp(train_rpart)
+printcp(train_rpart)
+```
+
+Refer to 'one standard error' rule, suppose $\lambda^* = argmin_{\lambda_i}(CV error)$, we will choose simplest (biggest $\lambda$) model such that $CV(\lambda) \leq SE(\lambda_i) + CV(\lambda^*)$. \
+
+The horizontal dotted line in plot indicates one standard error in addition to minimum cross-validation error. Points that below the dotted line are within the satisfied region. We can perceive tree with nine nodes (eight splits) is the simpliest model satisfying the rule. \
+
+Nine nodes (eight splits) corresponds to cp value of 0.00574713, rounds to 0.0057.
+
+
+```{r p2-b-2}
+opt_tree <- prune(train_rpart, cp=0.0057)
+
+rpart.plot(opt_tree)
+
+## predictions
+train_pred <- predict(opt_tree, spam_train, type='class')
+train_pred_tb <- table(spam_train$V58, train_pred)
+train_err <- (train_pred_tb[1, 2] + train_pred_tb[2, 1]) / length(train_pred)
+cat('training error rate: ', train_err)
+
+test_pred <- predict(opt_tree, spam_test, type='class')
+test_pred_tb <- table(spam_test$V58, test_pred)
+test_err <- (test_pred_tb[1, 2] + test_pred_tb[2, 1]) / length(test_pred)
+cat('test error rate: ', test_err)
+```
+This tree performs better than un-pruned tree on test data. 
+
+
+## Problem 3
+### (a)
+```{r p3-a}
+# define euclidean distance
+euc.dist <- function(q_pt, train_pts) {
+  return(sqrt(rowSums(sweep(as.matrix(train_pts), 2, as.numeric(q_pt))**2)))
+}
+
+knn.classifier <- function(X.train, y.train, X.test, k.try=1, pi=rep(1/K, K), CV=F) {
+  test_size <- nrow(X.test)
+  train_size <- nrow(X.train)
+  test_pred <- matrix(nrow=test_size, ncol=length(k.try))
+  K <- length(levels(y.train))
+  ni <- table(y.train)
+  
+  dist_matrix <- numeric(0)
+  if (CV) {
+    dist_matrix <- as.matrix(dist(X.train))
+  }
+  
+  for (i in 1:test_size){
+    query_pt <- X.test[i,]
+    eu_dist <- numeric(0)
+    y.train.final <- y.train
+    
+    # CV only make sense if X.train = X.test
+    if (CV) {
+      eu_dist <- dist_matrix[-i, i]
+      y.train.final <- y.train.final[-i]
+    } else {
+      eu_dist <- euc.dist(query_pt, X.train)
+    }
+    
+    # find k nearest training obs
+    for (j in 1:length(k.try)) {
+      knn_index <- which(eu_dist %in% sort(eu_dist)[1:k.try[j]])
+      knn_train_label <- y.train.final[knn_index]
+      
+      knn_train_count <- table(knn_train_label)
+      knn_score <- knn_train_count * pi / ni
+      max_score <- max(knn_score, na.rm=TRUE)
+      pred_label <- names(knn_score[which(knn_score == max_score)])
+      
+      # check if tie exists
+      if (length(pred_label) > 1) {
+        # random pick
+        pred_label <- sample(pred_label, 1)
+      }
+      test_pred[i, j] <- pred_label
+    }
+  }
+  return(test_pred)
+}
+```
+
+
+### (b)
+```{r p3-b}
+data(iris)
+
+X.train <- iris[, 1:4]
+y.train <- iris[, 5]
+```
+
+```{r p3-b-2}
+set.seed(123)
+
+train_err <- length(which(knn.classifier(X.train, y.train, X.train, k.try=5) !=y.train))
+cat('number of misclassification: ', train_err)
+
+
+train_err_cv <- length(which(knn.classifier(X.train, y.train, X.train, k.try=5, CV=TRUE) !=y.train))
+cat('number of misclassification (CV = True): ', train_err_cv)
+```
+
+
+### (c)
+```{r p3-c}
+k_ls <- c(1, 3, 7, 11, 15, 21, 27, 35, 43)
+
+zip_train <- read.table('zip-train.dat', sep='')
+X.train <- zip_train[,-1]
+y.train <- as.factor(zip_train[,1])
+
+pi_new <- table(y.train) / length(y.train)
+```
+
+```{r p3-c-2}
+set.seed(123)
+
+train_pred <- knn.classifier(X.train, y.train, X.train, pi=pi_new, k.try=k_ls, CV=TRUE)
+
+k_err <- numeric(length(k_ls))
+for (i in 1: length(k_ls)) {
+  k_err[i] <- length(which(train_pred[,i] !=y.train))
+}
+k_err <- k_err / nrow(X.train)
+
+cat('Optimal choice of k: ', which.min(k_err), ', with corresponding training error rate: ', min(k_err))
+
+plot(1:length(k_ls), k_err, xaxt='n', ylab='Error Rate', xlab='K')
+axis(1, at=1:length(k_ls), labels = k_ls)
+```
+
+
+### (d)
+```{r p3-d}
+set.seed(123)
+
+zip_test <- read.table('zip-test.dat', sep='')
+
+X.test <- zip_test[, -1]
+y.test <- as.factor(zip_test[,1])
+```
+
+```{r p3-d-2}
+test_pred <- knn.classifier(X.train, y.train, X.test, k.try=1)
+
+test_err <- length(which(test_pred !=y.test)) / nrow(X.test)
+
+cat('test error rate of 1-nearest neighbor classifier: ', test_err)
+```
+
+
